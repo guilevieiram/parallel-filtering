@@ -1,0 +1,173 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/dgif_lib.o",
+      "src/dgif_lib.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/dgif_lib.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/dgif_lib.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/egif_lib.o",
+      "src/egif_lib.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/egif_lib.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/egif_lib.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/gif_err.o",
+      "src/gif_err.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/gif_err.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/gif_err.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/gif_font.o",
+      "src/gif_font.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/gif_font.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/gif_font.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/gif_hash.o",
+      "src/gif_hash.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/gif_hash.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/gif_hash.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/gifalloc.o",
+      "src/gifalloc.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/gifalloc.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/gifalloc.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/main.o",
+      "src/main.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/main.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/main.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/openbsd-reallocarray.o",
+      "src/openbsd-reallocarray.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/openbsd-reallocarray.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/openbsd-reallocarray.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/gcc",
+      "-O3",
+      "-Iinclude",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include",
+      "-I/usr/lib/x86_64-linux-gnu/openmpi/include/openmpi",
+      "-o",
+      "obj/quantize.o",
+      "src/quantize.c"
+    ],
+    "directory": "/home/guile/x/parallel/sobelf",
+    "file": "/home/guile/x/parallel/sobelf/src/quantize.c",
+    "output": "/home/guile/x/parallel/sobelf/obj/quantize.o"
+  }
+]
