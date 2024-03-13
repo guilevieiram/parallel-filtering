@@ -6,27 +6,29 @@
 #include "utils.h"
 
 void pkg2img(img_pkg pkg, img *image, int *sender_rank) {
+  const size_t header = 4;
   image->width = pkg[0];
   image->height = pkg[1];
   image->id = pkg[2];
   if (sender_rank != NULL)
     *sender_rank = pkg[3];
   for (int i = 0; i < image->width * image->height; i++) {
-    image->p[i].r = pkg[4 + 3 * i + 0];
-    image->p[i].g = pkg[4 + 3 * i + 1];
-    image->p[i].b = pkg[4 + 3 * i + 2];
+    image->p[i].r = pkg[header + 3 * i + 0];
+    image->p[i].g = pkg[header + 3 * i + 1];
+    image->p[i].b = pkg[header + 3 * i + 2];
   }
 }
 
 void img2pkg(img image, img_pkg pkg, int sender_rank) {
+  const size_t header = 4;
   pkg[0] = image.width;
   pkg[1] = image.height;
   pkg[2] = image.id;
   pkg[3] = sender_rank;
   for (int i = 0; i < image.width * image.height; i++) {
-    pkg[4 + 3 * i + 0] = image.p[i].r;
-    pkg[4 + 3 * i + 1] = image.p[i].g;
-    pkg[4 + 3 * i + 2] = image.p[i].b;
+    pkg[header + 3 * i + 0] = image.p[i].r;
+    pkg[header + 3 * i + 1] = image.p[i].g;
+    pkg[header + 3 * i + 2] = image.p[i].b;
   }
 }
 

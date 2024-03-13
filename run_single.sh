@@ -34,5 +34,5 @@ for i in $INPUT_DIR/*gif ; do
     DEST=$OUTPUT_DIR/`basename $i .gif`-sobel.gif
     echo "Running test on $i -> $DEST"
 
-    salloc -N $N -n $n mpirun --bind-to none ./sobelf $i $DEST $LOG_FILE $PROD $PROC
+    salloc -N $N -n $n mpirun --bind-to none ./sobelf $i $DEST logs/$LOG_FILE $PROD $PROC
 done

@@ -27,7 +27,7 @@ enum producer {
   prod_omp,
 };
 
-enum processor { proc_invalid, proc_def, proc_omp };
+enum processor { proc_invalid, proc_def, proc_opt, proc_omp };
 
 enum producer parse_producer(char *str) {
   if (str == NULL)
@@ -47,6 +47,8 @@ enum processor parse_processor(char *str) {
     return proc_def;
   else if (!strcmp(str, "default"))
     return proc_def;
+  else if (!strcmp(str, "opt"))
+    return proc_opt;
   else if (!strcmp(str, "omp"))
     return proc_omp;
   else
@@ -68,6 +70,17 @@ void omp_pipe(img *image) {
     /* Apply sobel filter on pixels */
     apply_sobel_filter_once(image);
   }
+}
+
+void opt_pipe(img *image) {
+  /* Convert the pixels into grayscale */
+  apply_gray_filter_once(image);
+
+  /* Apply blur filter with convergence value */
+  apply_blur_filter_once_opt(image, 5, 20);
+
+  /* Apply sobel filter on pixels */
+  apply_sobel_filter_once_opt(image);
 }
 
 void default_pipe(img *image) {
@@ -175,8 +188,12 @@ int main(int argc, char **argv) {
   case proc_omp:
     pipe = omp_pipe;
     break;
+  case proc_opt:
+    pipe = opt_pipe;
+    break;
   default:
-    pipe = default_pipe;
+    // pipe = default_pipe;
+    pipe = log_pipe;
     break;
   }
 

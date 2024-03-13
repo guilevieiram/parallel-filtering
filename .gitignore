@@ -1,0 +1,6 @@
+.cache
+obj/*
+imge
+*.log
+compile_commands.json
+logs/*
