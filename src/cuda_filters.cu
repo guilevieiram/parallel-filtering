@@ -15,8 +15,8 @@ __global__ void gray_filter_kernel(pixel *p, unsigned size)
   unsigned i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < size)
   {
-    int moy = p[i].r + p[i].g + p[i].b;
-    moy = 255 * (moy > 3 * 255);
+    int moy = (p[i].r + p[i].g + p[i].b) / 3;
+    moy = max(0, min(255, moy));
 
     p[i].r = moy;
     p[i].g = moy;
@@ -81,6 +81,8 @@ extern "C" void cuda_apply_sobel_filter_once(img *image)
 {
   pixel *new_p_d = nullptr;
   cudaMalloc(&new_p_d, image->width * image->height * sizeof(pixel));
+  // TODO: Fix, this works but is not efficient. I tried doing it in the kernel but it didn't work
+  cudaMemcpy(new_p_d, image->p, image->width * image->height * sizeof(pixel), cudaMemcpyDeviceToDevice);
 
   const dim3 block_size(BLOCK_WIDTH, BLOCK_HEIGHT);
   const dim3 num_blocks((image->width + TILE_WIDTH - 1) / TILE_WIDTH, (image->height + TILE_HEIGHT - 1) / TILE_HEIGHT);
@@ -101,7 +103,7 @@ extern "C" void cuda_pipe(img *image)
   cuda_apply_gray_filter_once(&image_d);
 
   /* Apply blur filter with convergence value */
-  cuda_apply_blur_filter_once(&image_d, 5, 20);
+  // cuda_apply_blur_filter_once(&image_d, 5, 20);
 
   /* Apply sobel filter on pixels */
   cuda_apply_sobel_filter_once(&image_d);
