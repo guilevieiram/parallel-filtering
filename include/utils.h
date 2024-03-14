@@ -1,4 +1,5 @@
 #pragma once
+#define CONV(l, c, nb_c) (l) * (nb_c) + (c)
 #include <sys/time.h>
 #include "gif_lib.h"
 
