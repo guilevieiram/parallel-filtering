@@ -29,23 +29,6 @@ void apply_gray_filter_once(img *image) {
   }
 }
 
-void apply_gray_line_once(img *image) {
-  int j, k;
-  int width;
-  pixel *p;
-
-  p = image->p;
-  width = image->width;
-
-  for (j = 0; j < 10; j++) {
-    for (k = width / 2; k < width; k++) {
-      p[CONV(j, k, width)].r = 0;
-      p[CONV(j, k, width)].g = 0;
-      p[CONV(j, k, width)].b = 0;
-    }
-  }
-}
-
 void apply_blur_filter_once(img *image, int size, int threshold) {
   int j, k;
   int width, height;
