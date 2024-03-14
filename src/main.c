@@ -12,6 +12,7 @@
 #include <sys/time.h>
 
 #include "filters.h"
+#include "cuda_filters.h"
 #include "utils.h"
 
 #include "mpi_utils.h"
@@ -24,10 +25,10 @@ enum producer {
   prod_invalid,
   prod_def,
   prod_mpi,
-  prod_omp,
+  prod_omp
 };
 
-enum processor { proc_invalid, proc_def, proc_opt, proc_omp };
+enum processor { proc_invalid, proc_def, proc_opt, proc_omp, proc_cuda };
 
 enum producer parse_producer(char *str) {
   if (str == NULL)
@@ -51,6 +52,8 @@ enum processor parse_processor(char *str) {
     return proc_opt;
   else if (!strcmp(str, "omp"))
     return proc_omp;
+  else if (!strcmp(str, "cuda"))
+    return proc_cuda;
   else
     return proc_invalid;
 }
@@ -191,8 +194,10 @@ int main(int argc, char **argv) {
   case proc_opt:
     pipe = opt_pipe;
     break;
+  case proc_cuda:
+    pipe = cuda_pipe;
+    break;
   default:
-    // pipe = default_pipe;
     pipe = log_pipe;
     break;
   }
@@ -215,7 +220,7 @@ int main(int argc, char **argv) {
   /* Everything here on is for the ROOT to execute! */
   flog = fopen(log_filename, "a");
   if (flog == NULL) {
-    fprintf(stderr, "Could not open log file \n");
+    fprintf(stderr, "Could not open log file (%s)\n", log_filename);
     goto kill;
   }
 
