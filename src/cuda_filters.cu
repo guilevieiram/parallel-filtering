@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <stdio.h>
 #include <cuda_runtime.h>
 
 #define SOBEL_R 1
@@ -22,10 +23,6 @@ __global__ void gray_filter_kernel(pixel *p, unsigned size)
     p[i].g = moy;
     p[i].b = moy;
   }
-}
-
-__global__ void blur_filter_kernel(pixel *p, pixel *new_p, int width, int height, int size, int threshold)
-{
 }
 
 // Inspired by Nvidia CUDA samples
@@ -66,6 +63,75 @@ __global__ void sobel_filter_kernel(pixel *p, pixel *new_p, int width, int heigh
   }
 }
 
+__global__ void horizontal_pass(pixel *p, pixel *p_out, int width, int height, int size)
+{
+  int thread_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+  if (thread_idx >= height)
+  {
+    return;
+  }
+
+  int sum = 0;
+  int idx = thread_idx * width;
+  for (int i = 0; i < 2 * size + 1; i++)
+  {
+    sum += p[idx + i].r;
+  }
+
+  for (int i = 0; i < width - 2 * size; i++)
+  {
+    p_out[idx + size + i].r = sum;
+    p_out[idx + size + i].g = sum;
+    p_out[idx + size + i].b = sum;
+
+    sum += p[idx + i + 2 * size + 1].r;
+    sum -= p[idx + i].r;
+  }
+}
+
+__global__ void vertical_pass(pixel *p, pixel *p_out, int width, int height, int size)
+{
+  int sum = 0;
+  int idx = blockIdx.x * blockDim.x + threadIdx.x + size;
+
+  if (idx >= width - size)
+  {
+    return;
+  }
+
+  for (int i = 0; i < 2 * size + 1; i++)
+  {
+    sum += p[idx + width * i].r;
+  }
+
+  for (int i = 0; i < height - 2 * size; i++)
+  {
+    p_out[idx + width * (i + size)].r = sum;
+    p_out[idx + width * (i + size)].g = sum;
+    p_out[idx + width * (i + size)].b = sum;
+
+    sum += p[idx + width * (i + 2 * size + 1)].r;
+    sum -= p[idx + width * i].r;
+  }
+}
+
+__global__ void normalize_pixel_values(pixel *img, int width, int height, int size, int area)
+{
+  int x = blockIdx.x * blockDim.x + threadIdx.x;
+  int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+  if (x >= width - size || y >= height - size || x < size || y < size)
+  {
+    return;
+  }
+
+  int idx = y * width + x;
+  img[idx].r /= area;
+  img[idx].g /= area;
+  img[idx].b /= area;
+}
+
 extern "C" void cuda_apply_gray_filter_once(img *image_d)
 {
   const size_t block_size = 256;
@@ -75,6 +141,21 @@ extern "C" void cuda_apply_gray_filter_once(img *image_d)
 
 extern "C" void cuda_apply_blur_filter_once(img *image, int size, int threshold)
 {
+  pixel *new_p_d = nullptr;
+  cudaMalloc(&new_p_d, image->width * image->height * sizeof(pixel));
+  cudaMemcpy(new_p_d, image->p, image->width * image->height * sizeof(pixel), cudaMemcpyDeviceToDevice);
+
+  const int block_size = 256;
+  const int num_hor_blocks = (image->height + block_size - 1) / block_size;
+  const int num_vert_blocks = (image->width + block_size - 1) / block_size;
+
+  const dim3 block_size_norm(BLOCK_WIDTH, BLOCK_HEIGHT);
+  const dim3 num_norm_blocks((image->width + block_size_norm.x - 1) / block_size_norm.x, (image->height + block_size_norm.y - 1) / block_size_norm.y);
+
+  horizontal_pass<<<num_hor_blocks, block_size>>>(image->p, new_p_d, image->width, image->height / 10, size);
+  vertical_pass<<<num_vert_blocks, block_size>>>(new_p_d, image->p, image->width, image->height / 10, size);
+  normalize_pixel_values<<<num_norm_blocks, block_size_norm>>>(image->p, image->width, image->height / 10, size, (2 * size + 1) * (2 * size + 1));
+  cudaFree(new_p_d);
 }
 
 extern "C" void cuda_apply_sobel_filter_once(img *image)
@@ -89,7 +170,7 @@ extern "C" void cuda_apply_sobel_filter_once(img *image)
   sobel_filter_kernel<<<num_blocks, block_size>>>(image->p, new_p_d, image->width, image->height);
 
   cudaFree(image->p);
-  image->p = new_p_d;  
+  image->p = new_p_d;
 }
 
 extern "C" void cuda_pipe(img *image)
@@ -103,7 +184,7 @@ extern "C" void cuda_pipe(img *image)
   cuda_apply_gray_filter_once(&image_d);
 
   /* Apply blur filter with convergence value */
-  // cuda_apply_blur_filter_once(&image_d, 5, 20);
+  cuda_apply_blur_filter_once(&image_d, 5, 20);
 
   /* Apply sobel filter on pixels */
   cuda_apply_sobel_filter_once(&image_d);
