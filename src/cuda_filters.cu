@@ -145,9 +145,10 @@ extern "C" void cuda_apply_blur_filter_once(img *image, int size, int threshold)
   cudaMalloc(&new_p_d, image->width * image->height * sizeof(pixel));
   cudaMemcpy(new_p_d, image->p, image->width * image->height * sizeof(pixel), cudaMemcpyDeviceToDevice);
 
-  const int block_size = 256;
-  const int num_hor_blocks = (image->height + block_size - 1) / block_size;
-  const int num_vert_blocks = (image->width + block_size - 1) / block_size;
+  // second dimension is used to blur either the bottom or top of the image
+  const dim3 block_size(256, 1);
+  const dim3 num_hor_blocks((image->height + block_size.x - 1) / block_size.x, 1);
+  const dim3 num_vert_blocks((image->width + block_size.x - 1) / block_size.x, 1);
 
   const dim3 block_size_norm(BLOCK_WIDTH, BLOCK_HEIGHT);
   const dim3 num_norm_blocks((image->width + block_size_norm.x - 1) / block_size_norm.x, (image->height + block_size_norm.y - 1) / block_size_norm.y);
@@ -155,6 +156,13 @@ extern "C" void cuda_apply_blur_filter_once(img *image, int size, int threshold)
   horizontal_pass<<<num_hor_blocks, block_size>>>(image->p, new_p_d, image->width, image->height / 10, size);
   vertical_pass<<<num_vert_blocks, block_size>>>(new_p_d, image->p, image->width, image->height / 10, size);
   normalize_pixel_values<<<num_norm_blocks, block_size_norm>>>(image->p, image->width, image->height / 10, size, (2 * size + 1) * (2 * size + 1));
+
+  // TODO: implement this using block y dimension
+  int offset = image->width * (image->height - image->height / 10 - 1);
+  horizontal_pass<<<num_hor_blocks, block_size>>>(image->p + offset, new_p_d + offset, image->width, image->height / 10, size);
+  vertical_pass<<<num_vert_blocks, block_size>>>(new_p_d + offset, image->p + offset, image->width, image->height / 10, size);
+  normalize_pixel_values<<<num_norm_blocks, block_size_norm>>>(image->p + offset, image->width, image->height / 10, size, (2 * size + 1) * (2 * size + 1));
+
   cudaFree(new_p_d);
 }
 
@@ -187,7 +195,7 @@ extern "C" void cuda_pipe(img *image)
   cuda_apply_blur_filter_once(&image_d, 5, 20);
 
   /* Apply sobel filter on pixels */
-  cuda_apply_sobel_filter_once(&image_d);
+  // cuda_apply_sobel_filter_once(&image_d);
 
   /* Copy the pixels back to the host and frees memmory */
   cudaDeviceSynchronize();
