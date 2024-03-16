@@ -59,20 +59,17 @@ enum processor parse_processor(char *str) {
 }
 
 void omp_pipe(img *image) {
-#pragma omp parallel
-  {
 #if SOBELF_DEBUG
-    printf("Available threads in pipe: %d \n", omp_get_max_threads());
+  printf("Available threads in pipe: %d \n", omp_get_max_threads());
 #endif
 
-    omp_apply_gray_filter(image);
+  omp_apply_gray_filter(image);
 
-    /* Apply blur filter with convergence value */
-    apply_blur_filter_once(image, 5, 20);
+  /* Apply blur filter with convergence value */
+  omp_apply_blur_filter(image, 5, 20);
 
-    /* Apply sobel filter on pixels */
-    apply_sobel_filter_once(image);
-  }
+  /* Apply sobel filter on pixels */
+  omp_apply_sobel_filter(image);
 }
 
 void opt_pipe(img *image) {
@@ -198,7 +195,8 @@ int main(int argc, char **argv) {
     pipe = cuda_pipe;
     break;
   default:
-    pipe = log_pipe;
+    // pipe = default_pipe;
+    pipe = default_pipe;
     break;
   }
 
@@ -210,6 +208,12 @@ int main(int argc, char **argv) {
   MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
   mpi_n_workers = mpi_size - 1;
+
+  if (mpi_n_workers <= 0 && prod == prod_mpi) {
+    fprintf(stderr, "Invalid combination. Cannot have mpi producers with only "
+                    "one available rank.\n");
+    goto kill;
+  }
 
   if (mpi_rank != ROOT) {
     mpi_worker(mpi_rank, pipe);

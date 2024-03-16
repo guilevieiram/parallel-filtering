@@ -145,8 +145,6 @@ void apply_blur_filter_once(img *image, int size, int threshold) {
   free(new);
 }
 
-
-
 void apply_sobel_filter_once(img *image) {
   int j, k;
   int width, height;
@@ -226,7 +224,7 @@ void apply_blur_filter_once_opt(img *image, const int size,
     n_iter++;
 
     /* Apply blur on top AND bottom part of image (10%) */
-#pragma unroll
+#pragma GCC unroll 2
     for (int j_idx = 0; j_idx < 2; j_idx++) {
       for (int j = size; j < height / 10 - size; j++) {
 
@@ -296,6 +294,7 @@ void apply_sobel_filter_once_opt(img *image) {
   pixel *sobel;
 
   sobel = (pixel *)malloc(width * height * sizeof(pixel));
+  memcpy(sobel, p,width * height * sizeof(pixel));
 
   for (j = 1; j < height - 1; j++) {
     for (k = 1; k < width - 1; k++) {
@@ -340,4 +339,3 @@ void apply_sobel_filter_once_opt(img *image) {
   free(p);
   image->p = sobel;
 }
-
