@@ -57,7 +57,7 @@ __global__ void sobel_filter_kernel(pixel *p, pixel *new_p, int width, int heigh
                     (smem[smem_i + BLOCK_WIDTH - 1] - smem[smem_i - BLOCK_WIDTH - 1]) +
                     (smem[smem_i + BLOCK_WIDTH + 1] - smem[smem_i - BLOCK_WIDTH + 1]);
 
-    int new_val = sqrt(delta_x * delta_x + delta_y * delta_y) / 4;
+    float new_val = sqrt(delta_x * delta_x + delta_y * delta_y) / 4;
 
     new_p[i].r = (new_val > 50) * 255;
     new_p[i].g = (new_val > 50) * 255;
@@ -184,6 +184,7 @@ extern "C" void cuda_apply_blur_filter_once(img *image, int size, int threshold)
     cudaMemcpy(temp_p_d, image->p, image->width * image->height * sizeof(pixel), cudaMemcpyDeviceToDevice);
 
     // second dimension is used to blur either the bottom or top of the image
+    // not yet implemented
     const dim3 block_size(THREADS_PER_BLOCK, 1);
     const dim3 num_hor_blocks((image->height + block_size.x - 1) / block_size.x, 1);
     const dim3 num_vert_blocks((image->width + block_size.x - 1) / block_size.x, 1);
@@ -196,10 +197,11 @@ extern "C" void cuda_apply_blur_filter_once(img *image, int size, int threshold)
     normalize_pixel_values<<<num_norm_blocks, block_size_norm>>>(new_p_d, image->width, image->height / 10, size, (2 * size + 1) * (2 * size + 1));
 
     // TODO: implement this using block y dimension
-    int offset = image->width * (image->height - image->height / 10);
-    horizontal_pass<<<num_hor_blocks, block_size>>>(image->p + offset, temp_p_d + offset, image->width, image->height / 10, size);
-    vertical_pass<<<num_vert_blocks, block_size>>>(temp_p_d + offset, new_p_d + offset, image->width, image->height / 10, size);
-    normalize_pixel_values<<<num_norm_blocks, block_size_norm>>>(new_p_d + offset, image->width, image->height / 10, size, (2 * size + 1) * (2 * size + 1));
+    const int lower_bar_height = (image->height + 9) / 10;
+    const int offset = image->width * (image->height - lower_bar_height);
+    horizontal_pass<<<num_hor_blocks, block_size>>>(image->p + offset, temp_p_d + offset, image->width, lower_bar_height, size);
+    vertical_pass<<<num_vert_blocks, block_size>>>(temp_p_d + offset, new_p_d + offset, image->width, lower_bar_height, size);
+    normalize_pixel_values<<<num_norm_blocks, block_size_norm>>>(new_p_d + offset, image->width, lower_bar_height, size, (2 * size + 1) * (2 * size + 1));
 
     int num_reduction_blocks = (image->width * image->height + block_size.x - 1) / block_size.x;
     cudaMemset(cont_flag_d, 0, sizeof(int));
@@ -211,7 +213,7 @@ extern "C" void cuda_apply_blur_filter_once(img *image, int size, int threshold)
     new_p_d = temp;
 
     n_iter++;
-  } while (threshold > 0 && cont_flag && n_iter < 50);
+  } while (threshold > 0 && cont_flag);
 #if SOBELF_DEBUG
   printf("BLUR: number of iterations for image %d\n", n_iter);
 #endif
@@ -250,7 +252,7 @@ extern "C" void cuda_pipe(img *image)
   cuda_apply_blur_filter_once(&image_d, 5, 20);
 
   /* Apply sobel filter on pixels */
-  // cuda_apply_sobel_filter_once(&image_d);
+  cuda_apply_sobel_filter_once(&image_d);
 
   /* Copy the pixels back to the host and frees memmory */
   cudaDeviceSynchronize();
