@@ -2,8 +2,8 @@
 n=1
 N=1
 c=1
-PROD="default"
-PROC="default"
+PROD=""
+PROC=""
 LOG_FILE="sobelf.log"
 INPUT_DIR=images/original
 OUTPUT_DIR=images/processed
@@ -34,5 +34,5 @@ export OMP_NUM_THREADS=$c
 for i in $INPUT_DIR/*gif ; do
     DEST=$OUTPUT_DIR/`basename $i .gif`-sobel.gif
     echo "Running test on $i -> $DEST"
-    salloc -N $N -n $n -c $c mpirun --bind-to none ./sobelf $i $DEST logs/$LOG_FILE $PROD $PROC
+    salloc -N $N -n $n -c $c mpirun --bind-to none ./sobelf $i $DEST $LOG_FILE $PROD $PROC
 done

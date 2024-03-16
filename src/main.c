@@ -11,8 +11,8 @@
 #include <string.h>
 #include <sys/time.h>
 
-#include "filters.h"
 #include "cuda_filters.h"
+#include "filters.h"
 #include "utils.h"
 
 #include "mpi_utils.h"
@@ -20,15 +20,39 @@
 
 #define SOBELF_DEBUG 0
 #define ROOT 0
+#define NPIXELS_THRESHOLD 1000000
 
-enum producer {
-  prod_invalid,
-  prod_def,
-  prod_mpi,
-  prod_omp
-};
+enum producer { prod_invalid, prod_def, prod_mpi, prod_omp };
 
 enum processor { proc_invalid, proc_def, proc_opt, proc_omp, proc_cuda };
+
+char *get_prod_name(enum producer p) {
+  switch (p) {
+  case prod_def:
+    return "default";
+  case prod_omp:
+    return "OMP";
+  case prod_mpi:
+    return "MPI";
+  default:
+    return "";
+  }
+}
+
+char *get_proc_name(enum processor p) {
+  switch (p) {
+  case proc_def:
+    return "default";
+  case proc_omp:
+    return "OMP";
+  case proc_cuda:
+    return "CUDA";
+  case proc_opt:
+    return "optimized default";
+  default:
+    return "";
+  }
+}
 
 enum producer parse_producer(char *str) {
   if (str == NULL)
@@ -56,6 +80,21 @@ enum processor parse_processor(char *str) {
     return proc_cuda;
   else
     return proc_invalid;
+}
+
+void decide_parameters(img *images, enum processor *out_processor,
+                       enum producer *out_producer) {
+
+  int n_pixels = images[0].width * images[0].height;
+  int n_threads = omp_get_max_threads();
+  *out_producer = prod_def;
+
+  if (is_cuda_available() && n_pixels > NPIXELS_THRESHOLD)
+    *out_processor = proc_cuda;
+  else if (n_threads > 1)
+    *out_processor = proc_omp;
+  else
+    *out_processor = proc_def;
 }
 
 void omp_pipe(img *image) {
@@ -141,7 +180,7 @@ int main(int argc, char **argv) {
   void (*pipe)(img *);
 
   /* Check command-line arguments */
-  if (argc < 4) {
+  if (argc != 4 && argc != 6) {
     fprintf(
         stderr,
         "Usage: %s input.gif output.gif log_file.log [producer] [processor]\n",
@@ -154,8 +193,50 @@ int main(int argc, char **argv) {
   input_filename = argv[1];
   output_filename = argv[2];
   log_filename = argv[3];
-  prod = parse_producer(argc <= 4 ? NULL : argv[4]);
-  proc = parse_processor(argc <= 5 ? NULL : argv[5]);
+
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
+  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+  mpi_n_workers = mpi_size - 1;
+
+  /* IMPORT Timer start */
+  gettimeofday(&t1, NULL);
+
+  /* Load file and store the pixels in array */
+  image = load_pixels(input_filename);
+  if (image == NULL)
+    goto kill;
+
+  /* IMPORT Timer stop */
+  gettimeofday(&t2, NULL);
+
+  duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
+
+  if (mpi_rank == ROOT)
+    printf("GIF loaded from file %s with %d image(s) in %lf s\n",
+           input_filename, image->n_images, duration);
+
+  // passing images into new format
+  img *images = malloc(sizeof(img) * image->n_images);
+  for (int i = 0; i < image->n_images; i++) {
+    images[i].width = image->width[i];
+    images[i].height = image->height[i];
+    images[i].id = 1;
+    images[i].p = image->p[i];
+  }
+
+  if (argc == 4) {
+    decide_parameters(images, &proc, &prod);
+  }
+  if (argc == 6) {
+    prod = parse_producer(argv[4]);
+    proc = parse_processor(argv[5]);
+  }
+
+  // print the current configuration
+  printf("Running with configuration\n");
+  printf("\tProducer: %s\n", get_prod_name(prod));
+  printf("\tProcessor: %s\n", get_proc_name(proc));
 
   if (prod == prod_invalid) {
     fprintf(stderr, "Invalid producer parameter.\n");
@@ -173,16 +254,6 @@ int main(int argc, char **argv) {
     goto kill;
   }
 
-#if SOBELF_DEBUG
-  printf("\n\nARGUMENTS\n\n\n");
-  printf("prod %d\n", prod);
-  printf("proc %d\n", proc);
-  printf("input_file %s\n", input_filename);
-  printf("output_file %s\n", output_filename);
-  printf("log_file %s\n", log_filename);
-  printf("\n\nENDARGUMENTS\n\n\n");
-#endif /* SOBELF_DEBUG */
-
   // Defining pipe depending on proceadure
   switch (proc) {
   case proc_omp:
@@ -195,19 +266,9 @@ int main(int argc, char **argv) {
     pipe = cuda_pipe;
     break;
   default:
-    // pipe = default_pipe;
     pipe = default_pipe;
     break;
   }
-
-  if (proc == proc_omp || prod == prod_omp) // if any omp is being used
-    MPI_Init_thread(&argc, &argv, MPI_THREAD_FUNNELED, &provided);
-  else
-    MPI_Init(&argc, &argv);
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
-  mpi_n_workers = mpi_size - 1;
 
   if (mpi_n_workers <= 0 && prod == prod_mpi) {
     fprintf(stderr, "Invalid combination. Cannot have mpi producers with only "
@@ -226,31 +287,6 @@ int main(int argc, char **argv) {
   if (flog == NULL) {
     fprintf(stderr, "Could not open log file (%s)\n", log_filename);
     goto kill;
-  }
-
-  /* IMPORT Timer start */
-  gettimeofday(&t1, NULL);
-
-  /* Load file and store the pixels in array */
-  image = load_pixels(input_filename);
-  if (image == NULL)
-    goto kill;
-
-  /* IMPORT Timer stop */
-  gettimeofday(&t2, NULL);
-
-  duration = (t2.tv_sec - t1.tv_sec) + ((t2.tv_usec - t1.tv_usec) / 1e6);
-
-  printf("GIF loaded from file %s with %d image(s) in %lf s\n", input_filename,
-         image->n_images, duration);
-
-  // passing images into new format
-  img *images = malloc(sizeof(img) * image->n_images);
-  for (int i = 0; i < image->n_images; i++) {
-    images[i].width = image->width[i];
-    images[i].height = image->height[i];
-    images[i].id = 1;
-    images[i].p = image->p[i];
   }
 
   /* FILTER Timer start */

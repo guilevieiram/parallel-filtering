@@ -1,9 +1,9 @@
 #!/bin/bash
 n=1
 N=1
-c=8
-PROD="default"
-PROC="default"
+c=1
+PROD=""
+PROC=""
 LOG_FILE="sobelf.log"
 INPUT_DIR=images/test_original
 OUTPUT_DIR=images/test_processed
