@@ -1,6 +1,7 @@
 #!/bin/bash
 n=1
 N=1
+c=8
 PROD="default"
 PROC="default"
 LOG_FILE="sobelf.log"
@@ -8,10 +9,11 @@ INPUT_DIR=images/test_original
 OUTPUT_DIR=images/test_processed
 
 # Parse arguments
-while getopts ":n:N:p:j:l:i:" opt; do
+while getopts ":n:N:c:p:j:l:i:" opt; do
   case $opt in
     n) n=$OPTARG ;;
     N) N=$OPTARG ;;
+    c) c=$OPTARG ;;
     p) PROD=$OPTARG ;;
     j) PROC=$OPTARG ;;
     l) LOG_FILE=$OPTARG ;;
@@ -27,12 +29,12 @@ done
 
 make;
 
-rm -f $LOG_FILE;
 mkdir $OUTPUT_DIR 2>/dev/null
 
+export OMP_NUM_THREADS=$c
 for i in $INPUT_DIR/*gif ; do
     DEST=$OUTPUT_DIR/`basename $i .gif`-sobel.gif
     echo "Running test on $i -> $DEST"
 
-    salloc -N $N -n $n mpirun --bind-to none ./sobelf $i $DEST logs/$LOG_FILE $PROD $PROC
+    salloc -N $N -n $n -c $c mpirun --bind-to none ./sobelf $i $DEST $LOG_FILE $PROD $PROC
 done
