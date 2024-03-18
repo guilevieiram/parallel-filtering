@@ -20,13 +20,11 @@ make
 ## Usage
 To run the application:
 ```bash
-# to run with default configurations
+# to run with optimal configurations
 ./sobelf path/to/input.gif path/to/output.gif path/to/logs.log 
 
-# to choose a producer from (default, mpi, omp)
-./sobelf path/to/input.gif path/to/output.gif path/to/logs.log omp
-
-# to also choose a processor from (default, omp, cuda)
+# to choose a producer from (default, mpi, omp) 
+# and a processor from (default, omp, cuda)
 ./sobelf path/to/input.gif path/to/output.gif path/to/logs.log mpi cuda
 ```
 
@@ -45,6 +43,9 @@ To run the application over a set of images and with a specific setup, we provid
 ```
 
 All of the arguments in this script have sensible default values. Under the hood it will use `slurm` and `mpirun` to allocate a set of processes for your execution.
+
+If no producer and no processor are passed into the script, the program will decide optimally which configuration to use.
+
 
 
 ## Benchmarking
