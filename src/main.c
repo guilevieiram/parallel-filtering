@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
   char *output_filename;
   char *log_filename;
   enum producer prod;  /*default, mpi, omp*/
-  enum processor proc; /*default, omp*/
+  enum processor proc; /*default, omp, cuda*/
   animated_gif *image;
   struct timeval t1, t2;
   double duration;

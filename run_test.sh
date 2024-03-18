@@ -9,7 +9,7 @@ INPUT_DIR=images/original
 OUTPUT_DIR=images/processed
 
 # Parse arguments
-while getopts ":n:N:c:p:j:l:i:" opt; do
+while getopts ":n:N:c:p:j:l:i:o:" opt; do
   case $opt in
     n) n=$OPTARG ;;
     N) N=$OPTARG ;;
@@ -17,7 +17,8 @@ while getopts ":n:N:c:p:j:l:i:" opt; do
     p) PROD=$OPTARG ;;
     j) PROC=$OPTARG ;;
     l) LOG_FILE=$OPTARG ;;
-    i) IMAGES_FOLDER=$OPTARG ;;
+    i) INPUT_DIR=$OPTARG ;;
+    o) OUTPUT_DIR=$OPTARG ;;
     \?) echo "Invalid option -$OPTARG" >&2
         exit 1
         ;;
